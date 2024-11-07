@@ -1,15 +1,5 @@
-const multer = require('multer');
 const Product = require('../model/ProductModel');
-const cloudinary = require('cloudinary').v2;
 
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 const product = async (req, res) => {
     const { name, slug, sku, price, category, quantity, description } = req.body;
