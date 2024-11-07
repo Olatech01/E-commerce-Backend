@@ -10,8 +10,16 @@ const flash = require('connect-flash');
 const cors = require('cors');
 const connectDb = require('./connectDB/connect');
 const router = require('./routes/handler');
+const cloudinary = require('cloudinary').v2;
 
 const PORT = process.env.PORT || 5050;
+
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const app = express();
 
@@ -23,26 +31,25 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 app.use(
-  session({
-    secret: 'hello',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 },
-  })
+    session({
+        secret: 'hello',
+        resave: false,
+        saveUninitialized: true,
+        cookie: { maxAge: 24 * 60 * 60 * 1000 },
+    })
 );
 
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
 
-app.use('/api', router);
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something went wrong!');
+    console.error(err.stack);
+    res.status(500).send('Something went wrong!');
 });
 
 app.listen(PORT, () => {
-  connectDb();
-  console.log(`Server running on port ${PORT}`);
+    connectDb();
+    console.log(`Server running on port ${PORT}`);
 });
