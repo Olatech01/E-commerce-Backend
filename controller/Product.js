@@ -1,5 +1,61 @@
 const Product = require('../model/ProductModel');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 
+// Set up the upload directory and create it if it doesn't exist
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure multer storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
+        cb(null, uniqueName);
+    }
+});
+
+// Check file type
+function checkFileType(file, cb) {
+    const filetypes = /jpeg|jpg|png|gif/;
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = filetypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+        return cb(null, true);
+    } else {
+        cb(new Error('Only images (jpeg, jpg, png, gif) are allowed.'));
+    }
+}
+
+// Set up multer
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB limit
+    fileFilter: (req, file, cb) => {
+        checkFileType(file, cb);
+    }
+}).fields([
+    { name: 'imageUrl', maxCount: 1 },
+]);
+
+const multerUpload = (req, res) => {
+    return new Promise((resolve, reject) => {
+        upload(req, res, (err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+    });
+};
 
 const product = async (req, res) => {
     const { name, slug, sku, price, category, quantity, description } = req.body;
@@ -9,8 +65,13 @@ const product = async (req, res) => {
     }
 
     try {
-       
+        await multerUpload(req, res);
         
+        console.log("Files:", req.files);
+        console.log("Body:", req.body);
+
+        const imageUrl = req.files['imageUrl'][0].path;
+
         const newProduct = await Product.create({
             name,
             slug,
@@ -19,6 +80,7 @@ const product = async (req, res) => {
             category,
             quantity,
             description,
+            imageUrl,
         });
 
         res.status(201).json({ message: "Product created successfully", product: newProduct });
@@ -27,6 +89,7 @@ const product = async (req, res) => {
         res.status(500).json({ error: "An error occurred while creating the product." });
     }
 };
+
 
 
 const allProducts =  async(req, res) => {
